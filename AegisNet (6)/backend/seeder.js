@@ -293,11 +293,6 @@ async function seedDatabase() {
 
     await client.query('COMMIT');
     console.log('AegisNet complete demonstration dataset successfully seeded!');
-    console.log('Demo Accounts created:');
-    console.log(' - Admin: admin@aegisnet.org / AdminPass123!');
-    console.log(' - Responder: responder.police1@aegisnet.org / ResponderPass123!');
-    console.log(' - Responder: responder.medical1@aegisnet.org / ResponderPass123!');
-    console.log(' - Citizen User: citizen.aarav1@aegisnet.org / UserPass123!');
   } catch (err) {
     await client.query('ROLLBACK');
     console.error('Error seeding demonstration dataset:', err);
@@ -305,6 +300,94 @@ async function seedDatabase() {
   } finally {
     client.release();
   }
+
+  await seedOrganisations();
 }
 
-module.exports = { seedDatabase };
+async function seedOrganisations() {
+  const client = await getClient();
+  try {
+    await client.query('BEGIN');
+
+    // 1. Seed two primary emergency response organisations
+    const org1Res = await client.query(`
+      INSERT INTO organisations (name, official_email, notification_email, phone, address, verification_status)
+      VALUES (
+        'Tamil Nadu State Disaster Management & Emergency Operations (TN-SDMA)',
+        'tnsdma@aegisnet.org',
+        'alerts.tnsdma@aegisnet.org',
+        '+91 44 2859 3990',
+        'Ezhilagam, Chepauk, Chennai, Tamil Nadu 600005',
+        'verified'
+      )
+      ON CONFLICT (official_email) DO UPDATE SET name = EXCLUDED.name, notification_email = EXCLUDED.notification_email
+      RETURNING id
+    `);
+    const org1Id = org1Res.rows[0].id;
+
+    const org2Res = await client.query(`
+      INSERT INTO organisations (name, official_email, notification_email, phone, address, verification_status)
+      VALUES (
+        'Coimbatore Emergency Response & Police Quick Dispatch Grid',
+        'cbe.police.control@aegisnet.org',
+        'dispatch.cbe@aegisnet.org',
+        '+91 422 2300 100',
+        'Commissioner Office Road, Gopalapuram, Coimbatore, Tamil Nadu 641018',
+        'verified'
+      )
+      ON CONFLICT (official_email) DO UPDATE SET name = EXCLUDED.name, notification_email = EXCLUDED.notification_email
+      RETURNING id
+    `);
+    const org2Id = org2Res.rows[0].id;
+
+    // 2. Create Organisation Administrator account
+    const orgAdminHash = await bcrypt.hash('OrgAdminPass123!', 10);
+    const orgAdminUserRes = await client.query(`
+      INSERT INTO users (name, email, password_hash, phone, role, status)
+      VALUES ('Captain V. Rajan (TN-SDMA Operations Director)', 'org.admin@aegisnet.org', $1, '+91 94440 88991', 'admin', 'active')
+      ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name
+      RETURNING id
+    `, [orgAdminHash]);
+    const orgAdminUserId = orgAdminUserRes.rows[0].id;
+
+    // Link Org Admin to Organisation 1 and 2
+    await client.query(`
+      INSERT INTO organisation_members (organisation_id, user_id, role, status)
+      VALUES ($1, $2, 'admin', 'active')
+      ON CONFLICT (organisation_id, user_id) DO NOTHING
+    `, [org1Id, orgAdminUserId]);
+
+    await client.query(`
+      INSERT INTO organisation_members (organisation_id, user_id, role, status)
+      VALUES ($1, $2, 'admin', 'active')
+      ON CONFLICT (organisation_id, user_id) DO NOTHING
+    `, [org2Id, orgAdminUserId]);
+
+    // 3. Link Responders to Organisations
+    await client.query(`
+      UPDATE responder_profiles SET organisation_id = $1 WHERE organisation_id IS NULL AND id % 2 = 1
+    `, [org1Id]);
+    await client.query(`
+      UPDATE responder_profiles SET organisation_id = $1 WHERE organisation_id IS NULL
+    `, [org2Id]);
+
+    // 4. Update historical SOS logs to associate with Organisation 1 or 2
+    await client.query(`
+      UPDATE sos_logs SET organisation_id = $1 WHERE organisation_id IS NULL AND id % 2 = 1
+    `, [org1Id]);
+    await client.query(`
+      UPDATE sos_logs SET organisation_id = $1 WHERE organisation_id IS NULL
+    `, [org2Id]);
+
+    await client.query('COMMIT');
+    console.log('[Seeder] Organisations & Organisation Admin seeded successfully.');
+    console.log(' - Organisation Admin: org.admin@aegisnet.org / OrgAdminPass123!');
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('Error seeding organisations:', err);
+  } finally {
+    client.release();
+  }
+}
+
+module.exports = { seedDatabase, seedOrganisations };

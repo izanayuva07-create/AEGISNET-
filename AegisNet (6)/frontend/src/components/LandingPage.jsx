@@ -14,17 +14,22 @@ import {
   CheckCircle2,
   Lock,
   Zap,
-  Cpu
+  Cpu,
+  Building2
 } from 'lucide-react';
-import { authApi } from '../services/api';
+import { authApi, organisationApi } from '../services/api';
 
 export default function LandingPage({ onAuthSuccess }) {
+  const [portalMode, setPortalMode] = useState('user'); // 'user' | 'organisation'
   const [authMode, setAuthMode] = useState('login'); // 'login' | 'register'
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
   const [role, setRole] = useState('user'); // 'user' | 'responder' | 'admin'
+  const [orgName, setOrgName] = useState('');
+  const [notifEmail, setNotifEmail] = useState('');
+  const [orgAddress, setOrgAddress] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -32,14 +37,22 @@ export default function LandingPage({ onAuthSuccess }) {
   // Quick 1-Click Demo Logins
   function fillDemoAccount(demoRole) {
     if (demoRole === 'citizen') {
+      setPortalMode('user');
       setEmail('citizen.aarav1@aegisnet.org');
       setPassword('UserPass123!');
       setAuthMode('login');
     } else if (demoRole === 'responder') {
+      setPortalMode('organisation');
       setEmail('responder.police1@aegisnet.org');
       setPassword('ResponderPass123!');
       setAuthMode('login');
+    } else if (demoRole === 'org_admin') {
+      setPortalMode('organisation');
+      setEmail('org.admin@aegisnet.org');
+      setPassword('OrgAdminPass123!');
+      setAuthMode('login');
     } else if (demoRole === 'admin') {
+      setPortalMode('organisation');
       setEmail('admin@aegisnet.org');
       setPassword('AdminPass123!');
       setAuthMode('login');
@@ -53,16 +66,32 @@ export default function LandingPage({ onAuthSuccess }) {
 
     try {
       let result;
-      if (authMode === 'login') {
-        result = await authApi.login({ email: email.trim(), password });
+      if (portalMode === 'organisation') {
+        if (authMode === 'login') {
+          result = await organisationApi.login({ email: email.trim(), password });
+        } else {
+          result = await organisationApi.register({
+            name: orgName.trim(),
+            official_email: email.trim(),
+            notification_email: notifEmail.trim() || email.trim(),
+            phone: phone.trim(),
+            address: orgAddress.trim() || 'Emergency Operations Command',
+            admin_name: name.trim(),
+            password
+          });
+        }
       } else {
-        result = await authApi.register({
-          name: name.trim(),
-          email: email.trim(),
-          password,
-          phone: phone.trim(),
-          role
-        });
+        if (authMode === 'login') {
+          result = await authApi.login({ email: email.trim(), password });
+        } else {
+          result = await authApi.register({
+            name: name.trim(),
+            email: email.trim(),
+            password,
+            phone: phone.trim(),
+            role
+          });
+        }
       }
 
       if (onAuthSuccess) {
@@ -82,36 +111,38 @@ export default function LandingPage({ onAuthSuccess }) {
         <section className="hero">
           {/* Left Hero Copy */}
           <div className="hero-copy">
-            <p className="kicker">COMMUNITY SAFETY COORDINATION</p>
-            <h1>When every minute matters, AegisNet keeps help connected.</h1>
+            <p className="kicker">COMMUNITY SAFETY & EMERGENCY RESPONSE GRID</p>
+            <h1>When every second matters, AegisNet keeps help connected.</h1>
             <p className="subtext">
-              Report incidents quickly, share your location automatically, notify trusted contacts and connect with emergency responders through one intelligent safety network.
+              Real-time SOS triggering, automated GPS location broadcast, trusted contact alerts, and instant multi-agency organisation response coordination through one unified platform.
             </p>
 
             <div className="hero-actions">
               <button
                 className="primary-btn"
                 onClick={() => {
+                  setPortalMode('user');
                   setAuthMode('register');
                   document.getElementById('auth-card')?.scrollIntoView({ behavior: 'smooth' });
                 }}
               >
-                Create Account
+                Join Citizen Safety Grid
               </button>
               <button
                 className="secondary-btn"
                 onClick={() => {
+                  setPortalMode('organisation');
                   setAuthMode('login');
                   document.getElementById('auth-card')?.scrollIntoView({ behavior: 'smooth' });
                 }}
               >
-                Member Sign In
+                Organisation Command Sign In
               </button>
             </div>
 
             {/* Quick Demo Access Bar */}
             <div className="demo-accounts-pillbox">
-              <span className="demo-label">1-Click Test Accounts:</span>
+              <span className="demo-label">1-Click Test Access:</span>
               <button
                 id="demo-chip-citizen"
                 type="button"
@@ -131,6 +162,15 @@ export default function LandingPage({ onAuthSuccess }) {
                 🚨 Responder Demo
               </button>
               <button
+                id="demo-chip-org-admin"
+                type="button"
+                className="demo-chip admin"
+                onClick={() => fillDemoAccount('org_admin')}
+                title="Login as TNSDMA & Police Grid Organisation Administrator"
+              >
+                🏢 Org Admin Demo
+              </button>
+              <button
                 id="demo-chip-admin"
                 type="button"
                 className="demo-chip admin"
@@ -144,19 +184,75 @@ export default function LandingPage({ onAuthSuccess }) {
 
           {/* Right Auth Panel */}
           <div className="auth-panel" id="auth-card">
+            {/* PORTAL MODE PICKER */}
+            <div className="portal-selector" style={{ display: 'flex', gap: '8px', marginBottom: '14px' }}>
+              <button
+                type="button"
+                id="tab-portal-user"
+                className={`secondary-btn ${portalMode === 'user' ? 'portal-active-btn' : ''}`}
+                style={{
+                  flex: 1,
+                  padding: '9px 12px',
+                  fontSize: '0.82rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  background: portalMode === 'user' ? 'var(--gold)' : 'var(--bg-surface)',
+                  color: portalMode === 'user' ? '#080909' : 'var(--text-main)',
+                  fontWeight: 600,
+                  borderRadius: '8px',
+                  border: '1px solid rgba(216,188,67,0.3)'
+                }}
+                onClick={() => {
+                  setPortalMode('user');
+                  setErrorMsg('');
+                }}
+              >
+                <ShieldCheck size={15} /> Citizen Portal
+              </button>
+              <button
+                type="button"
+                id="tab-portal-org"
+                className={`secondary-btn ${portalMode === 'organisation' ? 'portal-active-btn' : ''}`}
+                style={{
+                  flex: 1,
+                  padding: '9px 12px',
+                  fontSize: '0.82rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  background: portalMode === 'organisation' ? 'var(--gold)' : 'var(--bg-surface)',
+                  color: portalMode === 'organisation' ? '#080909' : 'var(--text-main)',
+                  fontWeight: 600,
+                  borderRadius: '8px',
+                  border: '1px solid rgba(216,188,67,0.3)'
+                }}
+                onClick={() => {
+                  setPortalMode('organisation');
+                  setErrorMsg('');
+                }}
+              >
+                <Building2 size={15} /> Organisation Portal
+              </button>
+            </div>
+
             <div className="auth-tabs">
               <button
                 type="button"
+                id="btn-auth-mode-login"
                 className={authMode === 'login' ? 'active' : ''}
                 onClick={() => {
                   setAuthMode('login');
                   setErrorMsg('');
                 }}
               >
-                Login
+                Sign In
               </button>
               <button
                 type="button"
+                id="btn-auth-mode-register"
                 className={authMode === 'register' ? 'active' : ''}
                 onClick={() => {
                   setAuthMode('register');
@@ -168,7 +264,54 @@ export default function LandingPage({ onAuthSuccess }) {
             </div>
 
             <form onSubmit={handleAuthSubmit} className="auth-form">
-              {authMode === 'register' && (
+              {authMode === 'register' && portalMode === 'organisation' && (
+                <>
+                  <label>
+                    Organisation Name
+                    <input
+                      type="text"
+                      placeholder="e.g. Tamil Nadu State Disaster Management"
+                      value={orgName}
+                      onChange={(e) => setOrgName(e.target.value)}
+                      required
+                    />
+                  </label>
+
+                  <label>
+                    Emergency Notification Email (Critical SOS Alerts)
+                    <input
+                      type="email"
+                      placeholder="alerts.org@aegisnet.org"
+                      value={notifEmail}
+                      onChange={(e) => setNotifEmail(e.target.value)}
+                      required
+                    />
+                  </label>
+
+                  <label>
+                    Official Address / Command Base
+                    <input
+                      type="text"
+                      placeholder="Emergency Operations Centre, Coimbatore"
+                      value={orgAddress}
+                      onChange={(e) => setOrgAddress(e.target.value)}
+                    />
+                  </label>
+
+                  <label>
+                    Lead Administrator Name
+                    <input
+                      type="text"
+                      placeholder="Dr. K. Ramanathan"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      required
+                    />
+                  </label>
+                </>
+              )}
+
+              {authMode === 'register' && portalMode === 'user' && (
                 <>
                   <label>
                     Full Name
@@ -192,7 +335,7 @@ export default function LandingPage({ onAuthSuccess }) {
                   </label>
 
                   <div className="role-picker">
-                    <span className="picker-label">Account Type:</span>
+                    <span className="picker-label">Citizen Role:</span>
                     <div className="role-buttons">
                       <button
                         type="button"
@@ -206,7 +349,7 @@ export default function LandingPage({ onAuthSuccess }) {
                         className={role === 'responder' ? 'selected' : ''}
                         onClick={() => setRole('responder')}
                       >
-                        Responder
+                        Field Responder
                       </button>
                     </div>
                   </div>
@@ -214,21 +357,36 @@ export default function LandingPage({ onAuthSuccess }) {
               )}
 
               <label>
-                Email Address
+                {portalMode === 'organisation' ? 'Official Account Email' : 'Email Address'}
                 <input
                   type="email"
-                  placeholder="you@aegisnet.org"
+                  id="auth-input-email"
+                  placeholder={portalMode === 'organisation' ? 'org.admin@aegisnet.org' : 'you@aegisnet.org'}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
                 />
               </label>
 
+              {portalMode === 'organisation' && authMode === 'register' && (
+                <label>
+                  Official Contact Phone
+                  <input
+                    type="tel"
+                    placeholder="+91 44 2859 3990"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    required
+                  />
+                </label>
+              )}
+
               <label>
                 Password
                 <div className="password-input-wrap">
                   <input
                     type={showPassword ? 'text' : 'password'}
+                    id="auth-input-password"
                     placeholder="Enter password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -250,9 +408,13 @@ export default function LandingPage({ onAuthSuccess }) {
 
               <button id="auth-submit-btn" className="primary-btn full" disabled={busy} type="submit">
                 {busy
-                  ? 'Connecting to AegisNet...'
+                  ? 'Connecting to AegisNet Network...'
                   : authMode === 'login'
-                  ? 'Sign In to Safety Grid'
+                  ? portalMode === 'organisation'
+                    ? 'Enter Organisation Command'
+                    : 'Sign In to Safety Grid'
+                  : portalMode === 'organisation'
+                  ? 'Register Emergency Authority'
                   : 'Create Protected Account'}
               </button>
             </form>

@@ -6,6 +6,7 @@ import EmergencyContacts from './components/EmergencyContacts';
 import EmergencyProfile from './components/EmergencyProfile';
 import UserIncidentHistory from './components/UserIncidentHistory';
 import ResponderDashboard from './components/ResponderDashboard';
+import OrganisationPortal from './components/OrganisationPortal';
 import OfflineBanner from './components/OfflineBanner';
 import {
   getToken,
@@ -19,14 +20,14 @@ import './App.css';
 export default function App() {
   const [user, setUser] = useState(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
-  const [activeTab, setActiveTab] = useState('sos'); // 'sos' | 'contacts' | 'profile' | 'history' | 'dashboard' | 'landing' | 'auth'
+  const [activeTab, setActiveTab] = useState('sos'); // 'sos' | 'contacts' | 'profile' | 'history' | 'organisation' | 'dashboard' | 'landing' | 'auth'
 
   useEffect(() => {
     bootstrapSession();
 
-    // Check if URL is /dashboard
-    if (window.location.pathname === '/dashboard') {
-      setActiveTab('dashboard');
+    // Check if URL matches organisation portal or dashboard
+    if (window.location.pathname === '/dashboard' || window.location.pathname === '/organisation') {
+      setActiveTab('organisation');
     }
   }, []);
 
@@ -36,9 +37,9 @@ export default function App() {
 
     if (savedToken && savedUser) {
       setUser(savedUser);
-      // Auto-set tab based on role
-      if (['responder', 'admin'].includes(savedUser.role) && window.location.pathname === '/dashboard') {
-        setActiveTab('dashboard');
+      // Auto-set tab based on role or path
+      if (['responder', 'admin'].includes(savedUser.role) || savedUser.organisationId) {
+        setActiveTab('organisation');
       } else {
         setActiveTab('sos');
       }
@@ -64,8 +65,8 @@ export default function App() {
     setToken(token);
     setCurrentUser(userData);
 
-    if (['responder', 'admin'].includes(userData.role)) {
-      setActiveTab('dashboard');
+    if (['responder', 'admin'].includes(userData.role) || userData.organisationId) {
+      setActiveTab('organisation');
     } else {
       setActiveTab('sos');
     }
@@ -127,7 +128,9 @@ export default function App() {
 
             {activeTab === 'history' && <UserIncidentHistory user={user} />}
 
-            {activeTab === 'dashboard' && <ResponderDashboard user={user} />}
+            {(activeTab === 'organisation' || activeTab === 'dashboard') && (
+              <OrganisationPortal user={user} onLogout={handleLogout} />
+            )}
           </>
         )}
       </div>

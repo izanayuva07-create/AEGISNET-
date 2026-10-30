@@ -1,12 +1,12 @@
 import React from 'react';
-import { ShieldCheck, Radio, AlertTriangle, PhoneCall, LogOut, UserCheck } from 'lucide-react';
+import { ShieldCheck, Radio, AlertTriangle, PhoneCall, LogOut, UserCheck, Building2 } from 'lucide-react';
 
 export default function Navbar({ user, onLogout, activeTab, setActiveTab }) {
   const isResponderOrAdmin = user && ['responder', 'admin'].includes(user.role);
 
   return (
     <header className="landing-header">
-      <div className="brand-block" onClick={() => setActiveTab(user ? 'sos' : 'landing')} style={{ cursor: 'pointer' }}>
+      <div className="brand-block" onClick={() => setActiveTab(user ? (isResponderOrAdmin ? 'organisation' : 'sos') : 'landing')} style={{ cursor: 'pointer' }}>
         <div className="brand-mark">
           <ShieldCheck size={20} />
         </div>
@@ -60,15 +60,13 @@ export default function Navbar({ user, onLogout, activeTab, setActiveTab }) {
               Incident History
             </button>
 
-            {isResponderOrAdmin && (
-              <button
-                id="nav-tab-dashboard"
-                className={`nav-link-btn responder-highlight ${activeTab === 'dashboard' ? 'active' : ''}`}
-                onClick={() => setActiveTab('dashboard')}
-              >
-                <Radio size={15} className="pulse-icon" /> Responder Command
-              </button>
-            )}
+            <button
+              id="nav-tab-organisation"
+              className={`nav-link-btn responder-highlight ${activeTab === 'organisation' || activeTab === 'dashboard' ? 'active' : ''}`}
+              onClick={() => setActiveTab('organisation')}
+            >
+              <Building2 size={15} /> Organisation Command
+            </button>
 
             <div className="nav-user-badge">
               <span className={`role-pill ${user.role}`}>{user.role}</span>

@@ -142,3 +142,29 @@ export const sosApi = {
   }),
   geocode: (body) => apiRequest('/geocode', { method: 'POST', body: JSON.stringify(body) })
 };
+
+export const organisationApi = {
+  register: (data) => apiRequest('/organisation/register', { method: 'POST', body: JSON.stringify(data) }),
+  login: (data) => apiRequest('/organisation/login', { method: 'POST', body: JSON.stringify(data) }),
+  getDashboard: () => apiRequest('/organisation/dashboard'),
+  getIncidents: (params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return apiRequest(`/organisation/incidents${q ? '?' + q : ''}`);
+  },
+  getIncidentDetails: (id) => apiRequest(`/organisation/incidents/${id}`),
+  updateStatus: (id, status, remarks) => apiRequest(`/organisation/incidents/${id}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status, remarks })
+  }),
+  assignResponder: (id, data) => apiRequest(`/organisation/incidents/${id}/assign`, {
+    method: 'POST',
+    body: JSON.stringify(data)
+  }),
+  getResponders: () => apiRequest('/organisation/responders'),
+  addResponder: (data) => apiRequest('/organisation/responders', { method: 'POST', body: JSON.stringify(data) }),
+  updateResponder: (id, data) => apiRequest(`/organisation/responders/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteResponder: (id) => apiRequest(`/organisation/responders/${id}`, { method: 'DELETE' }),
+  getSettings: () => apiRequest('/organisation/settings'),
+  updateSettings: (data) => apiRequest('/organisation/settings', { method: 'PUT', body: JSON.stringify(data) }),
+  getNotificationLogs: () => apiRequest('/organisation/notification-logs')
+};

@@ -52,7 +52,7 @@ async function initSchema() {
       CREATE TABLE IF NOT EXISTS emergency_profiles (
         id SERIAL PRIMARY KEY,
         user_id INTEGER UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        blood_group VARCHAR(10),
+        blood_group VARCHAR(50),
         allergies TEXT,
         medications TEXT,
         medical_notes TEXT,
@@ -209,20 +209,71 @@ async function initSchema() {
       );
     `);
 
-    // 13. Offline Sync Records (Idempotent replay queue)
+    // 14. Organisations Table
     await client.query(`
-      CREATE TABLE IF NOT EXISTS offline_sync_records (
+      CREATE TABLE IF NOT EXISTS organisations (
         id SERIAL PRIMARY KEY,
-        client_temp_id VARCHAR(100) NOT NULL,
-        idempotency_key VARCHAR(100) UNIQUE NOT NULL,
-        synced BOOLEAN NOT NULL DEFAULT TRUE,
-        payload JSONB NOT NULL,
-        created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+        name VARCHAR(255) NOT NULL,
+        official_email VARCHAR(255) UNIQUE NOT NULL,
+        notification_email VARCHAR(255) NOT NULL,
+        phone VARCHAR(50),
+        address TEXT,
+        verification_status VARCHAR(50) NOT NULL DEFAULT 'verified',
+        created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+      CREATE INDEX IF NOT EXISTS idx_organisations_email ON organisations(official_email);
+    `);
+
+    // 15. Organisation Members Table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS organisation_members (
+        id SERIAL PRIMARY KEY,
+        organisation_id INTEGER NOT NULL REFERENCES organisations(id) ON DELETE CASCADE,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        role VARCHAR(50) NOT NULL DEFAULT 'admin', -- 'admin', 'dispatcher', 'responder'
+        status VARCHAR(50) NOT NULL DEFAULT 'active',
+        created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT uq_org_user UNIQUE (organisation_id, user_id)
       );
     `);
 
+    // 16. Organisation Email Notifications Table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS email_notifications (
+        id SERIAL PRIMARY KEY,
+        sos_id INTEGER REFERENCES sos_logs(id) ON DELETE CASCADE,
+        organisation_id INTEGER REFERENCES organisations(id) ON DELETE CASCADE,
+        recipient_email VARCHAR(255) NOT NULL,
+        subject TEXT NOT NULL,
+        html_body TEXT NOT NULL,
+        provider VARCHAR(50) NOT NULL DEFAULT 'development-simulation',
+        status VARCHAR(50) NOT NULL DEFAULT 'sent', -- 'pending', 'sent', 'delivered', 'failed'
+        provider_message_id VARCHAR(100),
+        attempts INTEGER NOT NULL DEFAULT 1,
+        error_message TEXT,
+        sent_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+      CREATE INDEX IF NOT EXISTS idx_email_notif_sos ON email_notifications(sos_id);
+      CREATE INDEX IF NOT EXISTS idx_email_notif_org ON email_notifications(organisation_id);
+    `);
+
+    // Ensure organisation_id columns exist on sos_logs and responder_profiles
+    await client.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='sos_logs' AND column_name='organisation_id') THEN
+          ALTER TABLE sos_logs ADD COLUMN organisation_id INTEGER REFERENCES organisations(id) ON DELETE SET NULL;
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='responder_profiles' AND column_name='organisation_id') THEN
+          ALTER TABLE responder_profiles ADD COLUMN organisation_id INTEGER REFERENCES organisations(id) ON DELETE SET NULL;
+        END IF;
+      END $$;
+    `);
+
     await client.query('COMMIT');
-    console.log('PostgreSQL AegisNet schema initialized successfully.');
+    console.log('PostgreSQL AegisNet schema initialized successfully with Organisation & Email tables.');
   } catch (err) {
     await client.query('ROLLBACK');
     console.error('Schema initialization error:', err);
