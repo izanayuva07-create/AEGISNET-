@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { MapContainer, TileLayer, CircleMarker, Circle, Popup, useMap } from 'react-leaflet';
 import {
   AlertCircle,
   MapPin,
@@ -10,9 +11,21 @@ import {
   Send,
   Sliders,
   AlertTriangle,
-  Info
+  Info,
+  Compass,
+  CheckCircle2
 } from 'lucide-react';
 import { sosApi } from '../services/api';
+
+function UserMapCenterController({ center }) {
+  const map = useMap();
+  useEffect(() => {
+    if (center && center[0] != null && center[1] != null) {
+      map.flyTo(center, 15, { duration: 1.2 });
+    }
+  }, [map, center]);
+  return null;
+}
 
 export default function SosInterface({ user, onSosSuccess }) {
   // Hold activation state
@@ -32,6 +45,19 @@ export default function SosInterface({ user, onSosSuccess }) {
   const [locationSource, setLocationSource] = useState('pending'); // 'gps' | 'manual' | 'unavailable'
   const [manualLocationText, setManualLocationText] = useState('');
   const [locationError, setLocationError] = useState('');
+  const [checkingLocation, setCheckingLocation] = useState(false);
+
+  async function handleCheckCurrentLocation() {
+    setCheckingLocation(true);
+    try {
+      const loc = await acquireLocation(true);
+      if (loc) {
+        triggerHaptic([80, 50, 80]);
+      }
+    } finally {
+      setCheckingLocation(false);
+    }
+  }
 
   // Result state
   const [activationResult, setActivationResult] = useState(null);
@@ -446,6 +472,144 @@ export default function SosInterface({ user, onSosSuccess }) {
         >
           <RefreshCw size={14} /> Refresh GPS
         </button>
+      </div>
+
+      {/* Live GPS Location Radar Map & Check Location Interactive Card */}
+      <div className="user-location-radar-card">
+        <div className="location-radar-header">
+          <div className="location-radar-title-group">
+            <Compass className="gold-text" size={24} />
+            <div>
+              <h3 style={{ margin: 0, fontSize: '1.05rem', color: 'var(--text-main)', letterSpacing: '0.02em' }}>
+                Live GPS Location Radar
+              </h3>
+              <p style={{ margin: '3px 0 0', fontSize: '0.78rem', color: 'var(--muted)' }}>
+                Verify and calibrate your satellite telemetry before or during emergency dispatch
+              </p>
+            </div>
+          </div>
+          <button
+            id="btn-check-current-location"
+            type="button"
+            className={`btn-check-location ${checkingLocation ? 'pulse-scanning' : ''}`}
+            onClick={handleCheckCurrentLocation}
+            disabled={checkingLocation}
+            title="Query device GPS hardware with high accuracy target"
+          >
+            {checkingLocation ? (
+              <>
+                <RefreshCw size={16} className="spinning-icon" />
+                Acquiring GPS Telemetry...
+              </>
+            ) : (
+              <>
+                <MapPin size={16} />
+                📍 Check My Current Location
+              </>
+            )}
+          </button>
+        </div>
+
+        <div className="user-map-container-wrap">
+          <MapContainer
+            center={coordinates ? [coordinates.latitude, coordinates.longitude] : [13.0827, 80.2707]}
+            zoom={coordinates ? 15 : 12}
+            scrollWheelZoom={false}
+            className="user-leaflet-map"
+            style={{ height: '100%', width: '100%' }}
+          >
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors & CartoDB'
+              url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+            />
+            <UserMapCenterController
+              center={coordinates ? [coordinates.latitude, coordinates.longitude] : [13.0827, 80.2707]}
+            />
+            {coordinates && (
+              <>
+                <CircleMarker
+                  center={[coordinates.latitude, coordinates.longitude]}
+                  radius={8}
+                  pathOptions={{
+                    color: '#D8BC43',
+                    fillColor: '#D8BC43',
+                    fillOpacity: 0.9,
+                    weight: 2
+                  }}
+                >
+                  <Popup>
+                    <div style={{ color: '#080909', fontWeight: 600, padding: '4px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                        <span style={{ color: '#D8BC43' }}>●</span>
+                        <strong>Your Current GPS Position</strong>
+                      </div>
+                      <div style={{ fontSize: '0.75rem', fontFamily: 'monospace' }}>
+                        Lat: {coordinates.latitude.toFixed(5)}<br />
+                        Lng: {coordinates.longitude.toFixed(5)}
+                      </div>
+                      {coordinates.accuracy && (
+                        <div style={{ fontSize: '0.72rem', color: '#666', marginTop: 4 }}>
+                          Accuracy radius: ±{Math.round(coordinates.accuracy)} meters
+                        </div>
+                      )}
+                    </div>
+                  </Popup>
+                </CircleMarker>
+                {coordinates.accuracy && (
+                  <Circle
+                    center={[coordinates.latitude, coordinates.longitude]}
+                    radius={Math.min(coordinates.accuracy, 500)}
+                    pathOptions={{
+                      color: '#D8BC43',
+                      fillColor: '#D8BC43',
+                      fillOpacity: 0.12,
+                      weight: 1,
+                      dashArray: '4, 4'
+                    }}
+                  />
+                )}
+              </>
+            )}
+          </MapContainer>
+        </div>
+
+        <div className="location-telemetry-hud">
+          <div className={`telemetry-hud-box ${coordinates ? 'verified' : ''}`}>
+            <span className="telemetry-hud-label">Latitude Telemetry</span>
+            <span className="telemetry-hud-val">
+              {coordinates ? coordinates.latitude.toFixed(6) : 'Awaiting Lock'}
+            </span>
+          </div>
+          <div className={`telemetry-hud-box ${coordinates ? 'verified' : ''}`}>
+            <span className="telemetry-hud-label">Longitude Telemetry</span>
+            <span className="telemetry-hud-val">
+              {coordinates ? coordinates.longitude.toFixed(6) : 'Awaiting Lock'}
+            </span>
+          </div>
+          <div className={`telemetry-hud-box ${coordinates ? 'verified' : ''}`}>
+            <span className="telemetry-hud-label">Sensor Precision</span>
+            <span className="telemetry-hud-val" style={{ color: coordinates ? 'var(--success)' : 'var(--muted)' }}>
+              {coordinates ? `±${Math.round(coordinates.accuracy || 15)}m GPS Lock` : 'Standby'}
+            </span>
+          </div>
+          <div className="telemetry-hud-box">
+            <span className="telemetry-hud-label">Emergency Pin</span>
+            <span className="telemetry-hud-val" style={{ fontSize: '0.82rem', color: 'var(--gold)' }}>
+              {coordinates ? (
+                <a
+                  href={`https://maps.google.com/?q=${coordinates.latitude},${coordinates.longitude}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ color: 'var(--gold)', textDecoration: 'underline' }}
+                >
+                  View on Google Maps ↗
+                </a>
+              ) : (
+                'Pending Fix'
+              )}
+            </span>
+          </div>
+        </div>
       </div>
 
       {/* Manual Location Override If Permission Blocked */}

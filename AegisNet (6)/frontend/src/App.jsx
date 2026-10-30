@@ -7,6 +7,7 @@ import EmergencyProfile from './components/EmergencyProfile';
 import UserIncidentHistory from './components/UserIncidentHistory';
 import ResponderDashboard from './components/ResponderDashboard';
 import OrganisationPortal from './components/OrganisationPortal';
+import DynamicBackgroundCarousel from './components/DynamicBackgroundCarousel';
 import OfflineBanner from './components/OfflineBanner';
 import {
   getToken,
@@ -90,6 +91,9 @@ export default function App() {
 
   return (
     <div className="app-shell">
+      {/* Dynamic 2-Second Rotating AI Backgrounds */}
+      <DynamicBackgroundCarousel />
+
       {/* Offline Status & Event Sync Banner */}
       <OfflineBanner />
 
