@@ -180,6 +180,25 @@ export default function LandingPage({ onAuthSuccess }) {
                 ⚡ Admin Demo
               </button>
             </div>
+
+            {/* AI VISUAL CORE SHOWCASE CARD */}
+            <div className="hero-visual-card">
+              <img
+                src="/aegis_hero_banner.jpg"
+                alt="AegisNet Holographic Shield and 3D Emergency City Mesh"
+                className="hero-visual-img"
+              />
+              <div className="hero-visual-overlay">
+                <div className="hero-visual-badge-row">
+                  <span className="hud-pill live">
+                    <Radio size={12} className="pulse-icon" /> SATELLITE MESH ONLINE
+                  </span>
+                  <span className="hud-pill">
+                    <Sparkles size={12} /> 3D GIS TELEMETRY ACTIVE
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Right Auth Panel */}
@@ -421,30 +440,66 @@ export default function LandingPage({ onAuthSuccess }) {
           </div>
         </section>
 
-        {/* THREE CORE FEATURES BELOW HERO */}
+        {/* THREE CORE FEATURES BELOW HERO WITH AI VISUALS */}
         <section id="features" className="feature-grid">
           <div className="feature-card">
-            <div className="feature-icon">
-              <ShieldAlert size={24} className="gold-text" />
+            <div className="feature-card-image-wrap">
+              <img
+                src="/aegis_sos_beacon.jpg"
+                alt="Automated Emergency SOS Beacon"
+                className="feature-card-img"
+              />
+              <div className="feature-card-image-overlay">
+                <span className="badge">GPS BEACON TELEMETRY</span>
+              </div>
             </div>
-            <h3>Emergency Response</h3>
-            <p>Fast emergency reporting with automatic location sharing and high-accuracy GPS coordinates.</p>
+            <div className="feature-card-body">
+              <div className="feature-icon">
+                <ShieldAlert size={22} className="gold-text" />
+              </div>
+              <h3>Emergency SOS & Geolocation</h3>
+              <p>3-second high-intensity distress activation with automatic HTML5 GPS lock, accuracy radius, and manual fallback.</p>
+            </div>
           </div>
 
           <div className="feature-card">
-            <div className="feature-icon">
-              <Users size={24} className="gold-text" />
+            <div className="feature-card-image-wrap">
+              <img
+                src="/aegis_command_center.jpg"
+                alt="State Operations Emergency Command Center"
+                className="feature-card-img"
+              />
+              <div className="feature-card-image-overlay">
+                <span className="badge">OPERATIONS COMMAND</span>
+              </div>
             </div>
-            <h3>Trusted Emergency Contacts</h3>
-            <p>Notify up to 5 registered emergency contacts instantly with SMS alerts, live map links, and distress details.</p>
+            <div className="feature-card-body">
+              <div className="feature-icon">
+                <Radio size={22} className="gold-text" />
+              </div>
+              <h3>Multi-Agency Command Grid</h3>
+              <p>Live Leaflet GIS map with Socket.IO emergency streaming, responder assignment, and official HTML email alert logs.</p>
+            </div>
           </div>
 
           <div className="feature-card">
-            <div className="feature-icon">
-              <Sparkles size={24} className="gold-text" />
+            <div className="feature-card-image-wrap">
+              <img
+                src="/aegis_ai_network.jpg"
+                alt="AI Neural Safety Network"
+                className="feature-card-img"
+              />
+              <div className="feature-card-image-overlay">
+                <span className="badge">AI SAFETY INTELLIGENCE</span>
+              </div>
             </div>
-            <h3>Intelligent Safety Assistant</h3>
-            <p>AI-assisted emergency classification, priority analysis, and explainable response guidance.</p>
+            <div className="feature-card-body">
+              <div className="feature-icon">
+                <Sparkles size={22} className="gold-text" />
+              </div>
+              <h3>AI Priority & Urgency Scoring</h3>
+              <p>Multi-factor priority classification (0-100 scale), explainable triage factors, and automatic emergency email dispatch.</p>
+            </div>
           </div>
         </section>
 
@@ -511,6 +566,50 @@ export default function LandingPage({ onAuthSuccess }) {
               <span className="step-num">11</span>
               <h4>CASE RESOLVED</h4>
               <p>Safe resolution logged with full timestamped audit trail.</p>
+            </div>
+          </div>
+        </section>
+
+        {/* AI VISUAL COMMAND SHOWCASE SECTION */}
+        <section className="command-showcase-section">
+          <div className="showcase-banner-card">
+            <div className="showcase-banner-img-wrap">
+              <img
+                src="/aegis_command_center.jpg"
+                alt="AegisNet Multi-Agency Emergency Operations Room"
+                className="showcase-banner-img"
+              />
+            </div>
+            <div className="showcase-banner-content">
+              <span className="badge-pill">MULTI-AGENCY CRISIS GRID</span>
+              <h3>Unified Incident Command with State & City Responders</h3>
+              <p>
+                AegisNet seamlessly interconnects individuals in distress with Police Quick Response Grids, State Disaster Management Authorities (TN-SDMA), and emergency paramedic dispatchers. Incidents stream onto tactical Leaflet GIS maps with instantaneous Socket.IO updates.
+              </p>
+              <div className="showcase-stats-row">
+                <div className="showcase-stat-item">
+                  <strong>&lt; 3.0s</strong>
+                  <span>SOS Lock</span>
+                </div>
+                <div className="showcase-stat-item">
+                  <strong>100%</strong>
+                  <span>GPS Telemetry</span>
+                </div>
+                <div className="showcase-stat-item">
+                  <strong>0.0s</strong>
+                  <span>Socket.IO Sync</span>
+                </div>
+              </div>
+              <button
+                className="primary-btn"
+                onClick={() => {
+                  setPortalMode('organisation');
+                  setAuthMode('login');
+                  document.getElementById('auth-card')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+              >
+                Launch Organisation Command Center
+              </button>
             </div>
           </div>
         </section>
