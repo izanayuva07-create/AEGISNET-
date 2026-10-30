@@ -1,70 +1,145 @@
-# AegisNet — A Protective Network
+# AEGISNET — AI-Enabled Emergency & Intelligent Safety Network
 
-Community safety coordination prototype built with React + Vite, Express, and SQLite.
+> **"When every minute matters, AegisNet keeps help connected."**  
+> Community Emergency Communication, Intelligent Safety, and First Responder Coordination Platform.
 
-## Features
-- Responsive desktop/tablet/mobile dashboard and sidebar
-- Registration and login with bcrypt password hashing and SQLite-backed sessions
-- Profile updates saved in the database
-- Role-based incident reports, volunteer assignment and claiming, and protected case chat
-- Admin incident analytics, volunteer management, and database-backed notifications
-- Interactive OpenStreetMap incident picker and optional browser geolocation
-- Private photo and video evidence uploads (JPEG, PNG, WebP, MP4, WebM; up to 25 MB)
-- Optional SMTP email alerts and HMAC-signed webhook alerts for newly created incidents
-- REST API health endpoint
+---
 
-## Requirements
-- Node.js 20+ (Node.js 24 should also work)
-- npm
+## 🛡️ Project Overview & Purpose
 
-## Run in VS Code
-Open this root folder (the one containing `package.json`, `frontend`, and `backend`) in VS Code. Open Terminal and run:
+During emergencies, individuals often struggle to communicate distress information and accurate coordinates quickly. Manual phone calls and delayed reporting lead to critical communication bottlenecks.
 
-```bash
-npm install
-npm install --prefix frontend
-npm install --prefix backend
-npm run dev
+**AegisNet** provides a centralized, fault-tolerant emergency communication platform where users can activate an SOS alert via a 3-second press-and-hold mechanism, automatically capture high-accuracy GPS coordinates, broadcast SMS notifications with live Google Maps links to up to 5 verified trusted contacts, and stream real-time prioritized incident feeds to an authorized responder command center.
+
+### Core Emergency Workflow
+```
+USER FACES EMERGENCY
+         ↓
+  OPENS AEGISNET
+         ↓
+PRESSES & HOLDS SOS (3s)
+         ↓
+ AUTOMATIC GPS CAPTURE (HTML5 Geolocation · 5s Timeout)
+         ↓
+SOS REQUEST SENT TO BACKEND (POST /api/v1/sos/trigger)
+         ↓
+EMERGENCY LOG SAVED (PostgreSQL 16 Relational Storage)
+         ↓
+TRUSTED CONTACTS NOTIFIED (SMS Broadcast with Google Maps Link)
+         ↓
+RESPONDER RECEIVES ALERT (Real-Time Push via Socket.IO)
+         ↓
+LOCATION & PRIORITY REVIEWED (Interactive Leaflet Map & AI Triage)
+         ↓
+RESPONSE COORDINATED (Dispatch Units: Police, Ambulance, Fire)
+         ↓
+    CASE RESOLVED (Timestamped Audit History)
 ```
 
-Open `http://127.0.0.1:5175`. The API runs at `http://127.0.0.1:4000`; health check: `http://127.0.0.1:4000/api/health`.
+---
 
-The first backend start creates `backend/data/aegisnet.sqlite`. Uploads are stored under `backend/uploads` and are served only to the reporting user, assigned volunteer, or admin. Back up the database and uploads together.
+## ⚡ Technology Stack
 
-### External incident alerts
+- **Frontend**: React 18, Vite, TypeScript/JavaScript, Tailwind CSS, Lucide React, Framer Motion
+- **Map & Telemetry**: Leaflet, React-Leaflet, OpenStreetMap, HTML5 High-Accuracy Geolocation API
+- **Backend**: Node.js, Express.js, Socket.IO (zero-latency responder broadcasts), JWT Authentication, Bcrypt
+- **Database**: PostgreSQL 16 (13 normalized relational tables), Pool connection manager
+- **AI Priority Engine**: Multi-vector emergency scoring (0–99 scale), distress categorization, urgency window analysis, transparent explanation
+- **Emergency Notifications**: Twilio SMS API with asynchronous retry queue and Development Simulation Provider
+- **Offline Resiliency**: `localStorage` emergency event queue with idempotency keys and automatic online synchronization
 
-External services are opt-in and do not send until configured. Copy the values from `backend/.env.example` into the local `backend/.env` and restart the backend.
+---
 
-- SMTP email requires `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS`, and `ALERT_EMAIL_TO`; optional values are `SMTP_PORT`, `SMTP_SECURE`, and `SMTP_FROM`.
-- Webhook alerts require `ALERT_WEBHOOK_URL` and a long random `ALERT_WEBHOOK_SECRET`. The JSON body is signed using HMAC-SHA256 and sent in `X-AegisNet-Signature`.
-- If both channels are configured, both receive a minimal incident summary. Provider credentials are never included in the dashboard response.
-- Delivery attempts are recorded in SQLite and shown in the admin dashboard. Failed deliveries are logged and do not undo incident creation.
+## 🚀 Live Services & Ports
 
-The interactive map uses OpenStreetMap tiles and therefore needs an internet connection. Browser location access requires the user's permission. Do not treat this prototype as an emergency dispatch service.
+| Component | Target URL / Port | Status |
+|---|---|---|
+| **Frontend Web App** | `http://localhost:5173` | Active (Vite Dev Server) |
+| **Backend REST Core** | `http://localhost:5000` | Active (Express + Socket.IO) |
+| **PostgreSQL Database** | `localhost:5432` (`aegisnet`) | Active (PostgreSQL 16) |
+| **Health Check API** | `http://localhost:5000/api/v1/health` | `200 OK` |
+| **Responder Command** | `http://localhost:5173/dashboard` | Active |
 
-## Deploy to Render
+---
 
-The root `render.yaml` deploys the built frontend and API together as one Node web service. SQLite, sessions, and evidence files use `/var/data`, backed by a persistent Render disk. This configuration intentionally uses one paid `starter` instance because local SQLite and uploaded files are not safe across multiple instances or ephemeral filesystems.
+## 🔑 Demo Login Credentials
 
-1. Push this project to a GitHub repository. Do not commit `.env` files, `backend/data`, `backend/uploads`, or `node_modules`; the root `.gitignore` excludes these.
-2. In Render, choose **New → Blueprint**, connect the repository, and apply `render.yaml`.
-3. Let Render generate `SESSION_SECRET` and wait for the health check at `/api/health`.
-4. Visit the Render service URL and initialize the owner admin account. Use a unique strong password.
-5. Configure SMTP or webhook environment variables in Render only if external alerts are required; never commit provider secrets.
+The database has been seeded with realistic Indian demonstration profiles (Coimbatore, Chennai, Madurai, Tiruppur, Salem, Bengaluru, Kochi):
 
-The deployment serves the frontend and `/api` from the same HTTPS origin, sets secure session cookies, and keeps uploads and SQLite data on the persistent disk. Back up the disk regularly. SQLite on a single persistent disk is intended for this prototype; use a managed database and object storage before scaling to multiple instances.
+| Role | Email Address | Password | Features / Access |
+|---|---|---|---|
+| **🛡️ Citizen** | `citizen.aarav1@aegisnet.org` | `UserPass123!` | 3s SOS activation, 5 trusted contacts, medical profile, incident tracking |
+| **🚨 Responder** | `responder.police1@aegisnet.org` | `ResponderPass123!` | Tactical Leaflet map, live Socket.IO incident feed, unit dispatching |
+| **⚡ Administrator**| `admin@aegisnet.org` | `AdminPass123!` | System-wide incident queue, user roster, audit logs, external alert controls |
 
-## Main API routes
-- `POST /api/auth/register`
-- `POST /api/auth/login`
-- `GET /api/auth/me`
-- `POST /api/auth/logout`
-- `GET /api/dashboard`
-- `PUT /api/profile`
-- `POST /api/incidents` (multipart form; optional `evidence` file)
-- `GET /api/incidents/:id/evidence` (authorized session required)
-- `POST /api/incidents/:id/claim` (volunteer)
-- `GET /api/chat/:incidentId`, `POST /api/chat/:incidentId`
+*Note: 1-click test chips are available on the AegisNet landing page for instant one-click login.*
 
-## Important safety note
-This is a local prototype, not an emergency dispatch service. Use HTTPS, strong unique session secrets, protected environment variables, rate limiting, CSRF protections, upload retention controls, and production session storage before deployment. Configure and verify alert providers before relying on delivery.
+---
+
+## 📋 Key Modules & Features
+
+### 1. 3-Second Press-and-Hold SOS Button
+- Visual animated SVG countdown ring (3s countdown)
+- Haptic feedback pattern (`navigator.vibrate([200, 100, 200])`)
+- Automatic cancel upon early release
+- High-accuracy GPS capture with 5-second timeout and manual coordinate fallback
+- Idempotency key protection to eliminate duplicate emergency submissions
+
+### 2. Trusted Emergency Contacts (Max 5)
+- Priority order management (#1 to #5) with Up/Down reordering
+- Strict phone number format validation
+- Duplicate phone prevention
+- Explicit user authorization verification checkbox
+
+### 3. Emergency Medical Profile
+- Confidential medical telemetry: Blood group, allergies, current medications, chronic conditions
+- First responder field instructions (e.g. inhaler location, language preferences)
+
+### 4. Asynchronous SMS Broadcast Engine
+- Generates verified Google Maps link: `https://www.google.com/maps?q=LAT,LNG`
+- Dispatches emergency alerts to all registered contacts
+- Development provider mode: records simulated messages with transparent label `[SIMULATED SMS - DEV PROVIDER]`
+- Unblocked incident creation: SMS failures are isolated from emergency record creation
+
+### 5. Responder Command Center (`/dashboard`)
+- Real-time dark command interface
+- Top metric cards: Total SOS alerts, Active incidents, Critical incidents, In-Progress dispatches, Resolved cases
+- Tactical Leaflet map with priority pins, severity pulse rings, and coordinate popups
+- Live Socket.IO event feed (`new_sos_incident`, `incident_status_changed`, `unit_dispatched`)
+- One-click responder actions: Update Status (`Acknowledged`, `In Progress`, `Resolved`, `Closed`) & Unit Dispatching
+
+### 6. AI Multi-Factor Priority Scoring
+- Analyzes distress category, description keywords, speed, and altitude
+- Assigns priority: `Critical`, `High`, `Medium`, or `Low` (Score: 0–99)
+- Renders explainable guidance; final operational decisions remain with authorized human responders
+
+---
+
+## 🛠️ Quick Start Guide
+
+### 1. Database Setup
+```bash
+# Ensure PostgreSQL 16 is running on localhost:5432
+# Create database aegisnet
+createdb -U postgres aegisnet
+
+# Seed initial demonstration accounts and 100 historical incidents
+cd backend
+node seeder.js
+```
+
+### 2. Start Backend Core
+```bash
+cd backend
+npm install
+node server.js
+# Backend listening on http://127.0.0.1:5000
+```
+
+### 3. Start Frontend
+```bash
+cd frontend
+npm install
+npm run dev
+# Frontend live on http://127.0.0.1:5173
+```
