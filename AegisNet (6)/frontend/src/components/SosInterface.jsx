@@ -274,6 +274,16 @@ export default function SosInterface({ user, onSosSuccess }) {
       <div className="sos-center-stage">
         {status === 'idle' || status === 'sending' || status === 'acquiring_gps' ? (
           <div className="sos-button-wrapper">
+            {/* High-Intensity Emergency Distress Alarm Beacon Background */}
+            <div className="sos-alarm-beacon-backdrop">
+              <img
+                src="/sos_alarm_beacon_bg.jpg"
+                alt="High-Intensity Emergency Alarm Beacon"
+                className="sos-alarm-image"
+              />
+              <div className="sos-alarm-pulse-overlay" />
+            </div>
+
             {/* Animated SVG Countdown Ring */}
             <svg className="sos-progress-svg" width="280" height="280" viewBox="0 0 280 280">
               {/* Background Track */}

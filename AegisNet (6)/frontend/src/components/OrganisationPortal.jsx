@@ -878,8 +878,19 @@ export default function OrganisationPortal({ user, onLogout }) {
             {actionModal.type === 'dispatch' && (
               <form onSubmit={handleDispatchSubmit} className="modal-form" style={{ padding: 20 }}>
                 <label>
-                  Assign Responder
-                  <select value={selectedResponderId} onChange={(e) => setSelectedResponderId(e.target.value)}>
+                  Assign Responder Unit
+                  <select
+                    id="dispatch-responder-select"
+                    value={selectedResponderId}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setSelectedResponderId(val);
+                      const chosen = responders.find((r) => String(r.user_id) === String(val));
+                      if (chosen) {
+                        setUnitDispatchedName(chosen.unit_name || chosen.name);
+                      }
+                    }}
+                  >
                     <option value="">Select an available responder...</option>
                     {responders.map((r) => (
                       <option key={r.id} value={r.user_id}>
@@ -888,11 +899,45 @@ export default function OrganisationPortal({ user, onLogout }) {
                     ))}
                   </select>
                 </label>
-                <label style={{ marginTop: 12 }}>
-                  Unit Designation
+
+                {/* 100% VISIBLE INTERACTIVE RESPONDER QUICK-SELECTION GRID */}
+                <div className="responder-quick-picker-section">
+                  <div className="picker-header-row">
+                    <span className="picker-title">⚡ Available QRT & Emergency Units (Click to Select):</span>
+                    <span className="picker-count">{responders.filter((r) => r.status === 'available').length} Ready</span>
+                  </div>
+                  <div className="responder-picker-grid">
+                    {responders.map((r) => {
+                      const isSelected = String(selectedResponderId) === String(r.user_id);
+                      const isAvail = r.status === 'available';
+                      return (
+                        <div
+                          key={r.id}
+                          className={`responder-picker-card ${isSelected ? 'selected' : ''} ${!isAvail ? 'busy' : ''}`}
+                          onClick={() => {
+                            setSelectedResponderId(r.user_id);
+                            setUnitDispatchedName(r.unit_name || r.name);
+                          }}
+                        >
+                          <div className="card-top">
+                            <span className="unit-badge">{r.responder_type}</span>
+                            <span className={`status-pill ${r.status}`}>● {r.status}</span>
+                          </div>
+                          <strong className="responder-name">{r.name}</strong>
+                          <div className="unit-callsign">🛡️ {r.unit_name}</div>
+                          <div className="responder-phone">📞 {r.phone}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <label style={{ marginTop: 14 }}>
+                  Confirmed Unit Designation
                   <input
                     value={unitDispatchedName}
                     onChange={(e) => setUnitDispatchedName(e.target.value)}
+                    placeholder="Selected unit name or callsign"
                     required
                   />
                 </label>

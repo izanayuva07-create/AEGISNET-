@@ -1,52 +1,80 @@
 import React, { useState, useEffect } from 'react';
+import { Sparkles, Play, Pause, Layers, Eye } from 'lucide-react';
 
-const BACKGROUND_STREAMS = [
+export const AI_BACKGROUND_STREAMS = [
   {
-    url: '/bg_satellite_constellation.jpg',
-    title: 'STREAM 01 // ORBITAL LEO SATELLITE MESH',
-    subtitle: 'Global Low-Earth Orbit Telemetry Relay Active'
+    id: 'cyber-shield',
+    url: '/aegis_ai_cyber_shield.jpg',
+    tag: 'AI STREAM 01',
+    title: 'METROPOLITAN CYBER SHIELD',
+    subtitle: 'Hexagonal Defense Dome & Orbital Telemetry Mesh',
+    badge: 'AI DEFENSE GRID'
   },
   {
-    url: '/bg_tactical_dispatch.jpg',
-    title: 'STREAM 02 // TACTICAL RAPID RESPONSE GRID',
-    subtitle: 'Autonomous GIS Navigation & Vector Routing'
+    id: 'tactical-command',
+    url: '/aegis_ai_tactical_command.jpg',
+    tag: 'AI STREAM 02',
+    title: '360° CRISIS OPERATIONS COMMAND',
+    subtitle: 'Multi-Agency Incident Radar & Leaflet Tactical GIS Grid',
+    badge: 'COMMAND RADAR'
   },
   {
-    url: '/bg_disaster_coordination.jpg',
-    title: 'STREAM 03 // 360° CRISIS OPERATIONS RADAR',
-    subtitle: 'State Disaster Management & Multi-Agency Command'
+    id: 'satellite-mesh',
+    url: '/aegis_ai_satellite_mesh.jpg',
+    tag: 'AI STREAM 03',
+    title: 'ORBITAL LEO SATELLITE CONSTELLATION',
+    subtitle: 'Global Low-Earth Orbit Telemetry & Quantum SOS Relay',
+    badge: 'ORBITAL MESH'
   },
   {
-    url: '/bg_cyber_shield_matrix.jpg',
-    title: 'STREAM 04 // METROPOLITAN CYBER SHIELD',
-    subtitle: 'Encrypted Citizen Protection & Coordinate Matrix'
+    id: 'rapid-response',
+    url: '/aegis_ai_rapid_response.jpg',
+    tag: 'AI STREAM 04',
+    title: 'RAPID RESPONSE CONVOY & GIS ROUTING',
+    subtitle: 'Autonomous Waypoint Interception & City Emergency Fleet',
+    badge: 'TACTICAL DISPATCH'
   }
 ];
 
 export default function DynamicBackgroundCarousel() {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+  const [vibrancyMode, setVibrancyMode] = useState('vivid'); // 'vivid' | 'balanced' | 'ambient'
+  const [showDrawer, setShowDrawer] = useState(false);
 
-  // Rotate images every 2 seconds (2000ms)
+  // Preload images once on mount
   useEffect(() => {
-    // Preload all 4 images on mount
-    BACKGROUND_STREAMS.forEach((item) => {
+    AI_BACKGROUND_STREAMS.forEach((item) => {
       const img = new Image();
       img.src = item.url;
     });
-
-    const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % BACKGROUND_STREAMS.length);
-    }, 2000);
-
-    return () => clearInterval(interval);
   }, []);
 
-  const activeStream = BACKGROUND_STREAMS[currentIndex];
+  // Cinematic 6-second rotation interval (pausable)
+  useEffect(() => {
+    if (isPaused) return;
+
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % AI_BACKGROUND_STREAMS.length);
+    }, 6000);
+
+    return () => clearInterval(interval);
+  }, [isPaused]);
+
+  const activeStream = AI_BACKGROUND_STREAMS[currentIndex];
+
+  function cycleVibrancy() {
+    setVibrancyMode((prev) => {
+      if (prev === 'vivid') return 'balanced';
+      if (prev === 'balanced') return 'ambient';
+      return 'vivid';
+    });
+  }
 
   return (
     <div className="dynamic-background-container" aria-hidden="true">
-      {/* 4 Layered Background Slides with 0.8s crossfade transition */}
-      {BACKGROUND_STREAMS.map((item, idx) => (
+      {/* Layered AI Background Slides with 1.2s crossfade + subtle slow zoom */}
+      {AI_BACKGROUND_STREAMS.map((item, idx) => (
         <div
           key={item.url}
           className={`dynamic-bg-slide ${idx === currentIndex ? 'active' : ''}`}
@@ -54,27 +82,120 @@ export default function DynamicBackgroundCarousel() {
         />
       ))}
 
-      {/* Dark Obsidian & Gold Radial Gradient Overlays for Maximum Readability */}
-      <div className="dynamic-bg-dark-overlay" />
+      {/* Dark Obsidian & Gold Radial Gradient Overlays with dynamic vibrancy */}
+      <div className={`dynamic-bg-dark-overlay mode-${vibrancyMode}`} />
       <div className="dynamic-bg-vignette" />
 
-      {/* Subtle Stream HUD Ticker at Bottom Right */}
+      {/* Interactive AI Background HUD Controller at Bottom Right */}
       <div className="dynamic-bg-hud-ticker">
-        <div className="ticker-pulse-dot" />
+        {/* Pulsing AI Indicator */}
+        <div className="ticker-pulse-dot" title="Live AI Video Telemetry Active" />
+
+        {/* AI Background Info Text */}
         <div className="ticker-text-block">
+          <div className="ticker-badge-row">
+            <span className="ticker-ai-chip">
+              <Sparkles size={10} /> AI GENERATED
+            </span>
+            <span className="ticker-tag">{activeStream.tag}</span>
+          </div>
           <span className="ticker-stream-title">{activeStream.title}</span>
           <span className="ticker-stream-sub">{activeStream.subtitle}</span>
         </div>
+
+        {/* Stream Dots / Quick Selector */}
         <div className="ticker-dots-row">
-          {BACKGROUND_STREAMS.map((_, i) => (
-            <span
-              key={i}
+          {AI_BACKGROUND_STREAMS.map((item, i) => (
+            <button
+              key={item.id}
+              type="button"
               className={`ticker-dot ${i === currentIndex ? 'active' : ''}`}
               onClick={() => setCurrentIndex(i)}
+              title={`Switch to ${item.title}`}
+              aria-label={`Switch to ${item.title}`}
             />
           ))}
         </div>
+
+        {/* Play / Pause Toggle Button */}
+        <button
+          type="button"
+          className="ticker-action-btn"
+          onClick={() => setIsPaused((prev) => !prev)}
+          title={isPaused ? 'Resume auto-rotation' : 'Pause on this background'}
+          aria-label={isPaused ? 'Resume auto-rotation' : 'Pause on this background'}
+        >
+          {isPaused ? <Play size={12} /> : <Pause size={12} />}
+        </button>
+
+        {/* Vibrancy Mode Toggle Button */}
+        <button
+          type="button"
+          className="ticker-action-btn"
+          onClick={cycleVibrancy}
+          title={`Vibrancy: ${vibrancyMode.toUpperCase()} (Click to toggle Vivid / Balanced / Ambient)`}
+          aria-label="Toggle background vibrancy mode"
+        >
+          <Eye size={12} />
+          <span className="vibrancy-label">{vibrancyMode}</span>
+        </button>
+
+        {/* Visual Gallery Drawer Toggle */}
+        <button
+          type="button"
+          className={`ticker-action-btn ${showDrawer ? 'active' : ''}`}
+          onClick={() => setShowDrawer((prev) => !prev)}
+          title="Open AI Background Gallery Drawer"
+          aria-label="Toggle AI Background Gallery Drawer"
+        >
+          <Layers size={12} />
+        </button>
       </div>
+
+      {/* Visual Gallery Drawer Modal / Flyout */}
+      {showDrawer && (
+        <div className="ai-bg-drawer" onClick={(e) => e.stopPropagation()}>
+          <div className="ai-bg-drawer-header">
+            <div className="ai-bg-drawer-title">
+              <Sparkles size={14} className="gold-text" />
+              <span>AegisNet AI Background Canvas</span>
+            </div>
+            <button
+              type="button"
+              className="ai-bg-drawer-close"
+              onClick={() => setShowDrawer(false)}
+            >
+              ✕
+            </button>
+          </div>
+          <p className="ai-bg-drawer-hint">
+            Select an AI-synthesized emergency defense background stream:
+          </p>
+          <div className="ai-bg-grid">
+            {AI_BACKGROUND_STREAMS.map((item, idx) => (
+              <div
+                key={item.id}
+                className={`ai-bg-thumb-card ${idx === currentIndex ? 'selected' : ''}`}
+                onClick={() => {
+                  setCurrentIndex(idx);
+                  setIsPaused(true);
+                }}
+              >
+                <div
+                  className="ai-bg-thumb-img"
+                  style={{ backgroundImage: `url(${item.url})` }}
+                />
+                <div className="ai-bg-thumb-meta">
+                  <div className="ai-bg-thumb-tag">{item.tag}</div>
+                  <strong className="ai-bg-thumb-title">{item.title}</strong>
+                  <span className="ai-bg-thumb-badge">{item.badge}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
